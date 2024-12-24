@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional CV Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #cv-preview {
+      display: none; /* Initially hidden */
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .required::after {
+      content: "*";
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Professional CV Generator</h1>
+
+  <form id="cv-form">
+    <div class="form-group">
+      <label for="name" class="required">Full Name</label>
+      <input type="text" id="name" required>
+    </div>
+    <div class="form-group">
+      <label for="email" class="required">Email</label>
+      <input type="email" id="email" required>
+    </div>
+    <div class="form-group">
+      <label for="phone" class="required">Phone</label>
+      <input type="tel" id="phone" required>
+    </div>
+    <div class="form-group">
+      <label for="photo" class="required">Profile Photo</label>
+      <input type="file" id="photo" accept="image/*" required>
+    </div>
+    <div class="form-group">
+      <label for="summary">Professional Summary</label>
+      <textarea id="summary" rows="4"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="skills">Skills</label>
+      <textarea id="skills" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="education">Education</label>
+      <textarea id="education" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="experience">Work Experience</label>
+      <textarea id="experience" rows="4"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="portfolio">Portfolio URL</label>
+      <input type="url" id="portfolio">
+    </div>
+
+    <button type="button" id="generate-cv">Generate CV</button>
+  </form>
+
+  <h2>CV Preview</h2>
+  <div id="cv-preview"></div>
+
+  <button id="edit-cv" disabled>Edit CV</button>
+  <button id="download-pdf" disabled>Download as PDF</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
+
+<script>
+  const form = document.getElementById('cv-form');
+  const preview = document.getElementById('cv-preview');
+  const downloadBtn = document.getElementById('download-pdf');
+  const editBtn = document.getElementById('edit-cv');
+
+  document.getElementById('generate-cv').addEventListener('click', () => {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    const photo = document.getElementById('photo').files[0];
+    const summary = document.getElementById('summary').value;
+    const skills = document.getElementById('skills').value;
+    const education = document.getElementById('education').value;
+    const experience = document.getElementById('experience').value;
+    const portfolio = document.getElementById('portfolio').value;
+
+    if (!name || !email || !phone || !photo) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+
+    // Store data in localStorage for generating a unique URL
+    const cvData = {
+      name,
+      email,
+      phone,
+      summary,
+      skills,
+      education,
+      experience,
+      portfolio,
+    };
+    localStorage.setItem('cvData', JSON.stringify(cvData));
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.innerHTML = `
+        <div contenteditable="false">
+          <img src="${e.target.result}" alt="Profile Photo" style="width: 100px; height: 100px; border-radius: 50%;">
+          <h2>${name}</h2>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Portfolio:</strong> <a href="${portfolio}" target="_blank">${portfolio}</a></p>
+          <hr>
+          <p><strong>Summary:</strong> ${summary}</p>
+          <p><strong>Skills:</strong> ${skills}</p>
+          <p><strong>Education:</strong> ${education}</p>
+          <p><strong>Experience:</strong> ${experience}</p>
+        </div>
+      `;
+      preview.style.display = 'block'; // Show preview after form completion
+      downloadBtn.disabled = false;
+      editBtn.disabled = false;
+    };
+    reader.readAsDataURL(photo);
+
+    // Create a unique URL for the CV
+    const cvUrl = window.location.href.split('?')[0] + '?cv=' + btoa(JSON.stringify(cvData));
+    alert('Your CV URL: ' + cvUrl);
+  });
+
+  editBtn.addEventListener('click', () => {
+    const editableContent = preview.querySelector('div');
+    const isEditable = editableContent.getAttribute('contenteditable') === 'true';
+    editableContent.setAttribute('contenteditable', !isEditable);
+    editBtn.textContent = isEditable ? 'Edit CV' : 'Save Changes';
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    const options = {
+      margin: 1,
+      filename: 'cv.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().set(options).from(preview).save();
+  });
+</script>
+
+</body>
+</html>
